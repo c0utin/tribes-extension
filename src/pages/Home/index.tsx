@@ -24,6 +24,8 @@ import { PluginConfig } from '../../utils/misc';
 import { getPluginConfigByHash } from '../../entries/Background/db';
 import { fetchPluginHashes } from '../../utils/rpc';
 import DefaultPluginIcon from '../../assets/img/default-plugin-icon.png';
+import { useRequests, notarizeRequest } from '../../reducers/requests'; // Import notarizeRequest
+import { useDispatch } from 'react-redux'; // Import dispatch para disparar a ação de notarização
 
 export default function Home(props: {
   tab?: 'history' | 'network';
@@ -65,6 +67,36 @@ export default function Home(props: {
       element.removeEventListener('scroll', onScroll);
     };
   }, [scrollableContent, actionPanelElement]);
+  const dispatch = useDispatch(); // Usar dispatch para chamar a action
+
+  // Função para lidar com o clique no botão "we gucci"
+  const handleWeGucciClick = () => {
+    // Encontra a primeira request que contenha 'graphql' na URL
+    const firstGraphqlRequest = requests.find((request) =>
+      request.url.includes('graphql/query'),
+    );
+
+    if (!firstGraphqlRequest) {
+      // Se não encontrar uma requisição com 'graphql', exibe um erro
+      showError('No request with "graphql" found');
+    } else {
+      // Se encontrar, dispara a ação de notarização
+      dispatch(
+        notarizeRequest({
+          id: firstGraphqlRequest.requestId,
+          url: firstGraphqlRequest.url,
+          method: firstGraphqlRequest.method,
+          headers: firstGraphqlRequest.requestHeaders,
+          body: firstGraphqlRequest.requestBody,
+          secretHeaders: [], // Ajustar conforme necessário
+          secretResps: [], // Ajustar conforme necessário
+        }),
+      );
+
+      // Navega para a tela de notarização
+      navigate(`/notary/${firstGraphqlRequest.requestId}`);
+    }
+  };
 
   return (
     <div
@@ -99,6 +131,9 @@ export default function Home(props: {
         {tab === 'history' && <History />}
         {tab === 'network' && <Requests shouldFix={shouldFix} />}
       </div>
+
+      {/* Botão "we gucci" */}
+      <button onClick={handleWeGucciClick}>we gucci</button>
     </div>
   );
 }
